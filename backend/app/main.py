@@ -1,9 +1,11 @@
+import time
 from contextlib import asynccontextmanager
 from typing import Annotated
 from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from sqlalchemy import select
+from sqlalchemy.exc import OperationalError
 
 from app.database import engine, get_db
 from app.models import Base, Product
@@ -11,7 +13,17 @@ from app.schemas import ProductResponse, ProductCreate
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    Base.metadata.create_all(bind=engine)
+    # Wait up to 15 seconds for PostgreSQL to boot up before creating tables
+    retries = 5
+    while retries > 0:
+        try:
+            Base.metadata.create_all(bind=engine)
+            print("Database connected and tables created safely!")
+            break
+        except OperationalError:
+            print(f"Database not ready yet. Retrying in 3 seconds... ({retries} tries left)")
+            retries -= 1
+            time.sleep(3)
     yield
 
 app = FastAPI(title="Student Marketplace API", version="1.0.0", lifespan=lifespan)
