@@ -18,7 +18,10 @@ services:
     volumes:
       - ./backend:/app
     environment:
-      - DATABASE_URL=postgresql://postgres:postgres@db:5432/marketplace
+      - DATABASE_URL=postgresql+psycopg://postgres:postgres@db:5432/student_market
+      - SECRET_KEY=super-secret-key
+      - ALGORITHM=HS256
+      - ACCESS_TOKEN_EXPIRE_MINUTES=30
 
   db:
     image: postgres:16-alpine
@@ -27,7 +30,7 @@ services:
     environment:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
-      - POSTGRES_DB=marketplace
+      - POSTGRES_DB=student_market
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
