@@ -1,29 +1,21 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Routes, Route } from 'react-router-dom';
 import Navigation from './components/Navigation';
 import Hero from './components/Hero';
 import ProductCard from './components/ProductCard';
 import ProductDetails from './pages/ProductDetails';
 import CreateListing from './pages/CreateListing';
-import MyListings from './components/MyListings';
-import { mockProducts, Product } from './data/mockData';
+import MyListings from './components/MyListings'; 
 import StudentProfile from './pages/StudentProfile';
 import AuthPage from './pages/AuthPage';
 
-type HomePageProps = {
-  products: Product[];
-};
-
-function HomePage({ products }: HomePageProps) {
-  const [activeCategory, setActiveCategory] = useState("All");
+function HomePage({ products, categories }: { products: any[], categories: any[] }) {
+  // activeCategory is now either "All" or a category_id number
+  const [activeCategory, setActiveCategory] = useState<number | "All">("All");
   const [searchQuery, setSearchQuery] = useState("");
-
-  // Sidebar Filter Form State
   const [minPrice, setMinPrice] = useState("");
   const [maxPrice, setMaxPrice] = useState("");
   const [condition, setCondition] = useState("All");
-  
-  // Applied Filters State (Updates only when clicking "Apply filters")
   const [appliedFilters, setAppliedFilters] = useState({ min: 0, max: Infinity, condition: "All" });
 
   const handleApplyFilters = () => {
@@ -34,15 +26,16 @@ function HomePage({ products }: HomePageProps) {
     });
   };
 
-  // Filter Logic
   const filteredProducts = products.filter(product => {
-    const matchesCategory = activeCategory === "All" || product.category === activeCategory;
-    const matchesSearch = product.title.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesPrice = product.price >= appliedFilters.min && product.price <= appliedFilters.max;
+    // Database strict matching on category_id
+    const matchesCategory = activeCategory === "All" || product.category_id === activeCategory; 
     
-    // Case-insensitive check for condition (e.g., matches "Used" inside "Used - Good")
+    const matchesSearch = product.title.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesPrice = Number(product.price) >= appliedFilters.min && Number(product.price) <= appliedFilters.max;
+    
+    // Safety check for null condition strings before calling toLowerCase()
     const matchesCondition = appliedFilters.condition === "All" || 
-      product.condition.toLowerCase().includes(appliedFilters.condition.toLowerCase());
+      (product.condition && product.condition.toLowerCase().includes(appliedFilters.condition.toLowerCase()));
     
     return matchesCategory && matchesSearch && matchesPrice && matchesCondition;
   });
@@ -52,10 +45,10 @@ function HomePage({ products }: HomePageProps) {
       <Hero 
         activeCategory={activeCategory} setActiveCategory={setActiveCategory}
         searchQuery={searchQuery} setSearchQuery={setSearchQuery}
+        categories={categories}
       />
       
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 mt-4">
-        {/* Left Sidebar Filters */}
         <div className="col-span-1 border border-gray-100 bg-white rounded-2xl p-6 h-max flex flex-col gap-6">
           <h3 className="font-bold text-gray-900 text-lg">Filters</h3>
           
@@ -98,14 +91,13 @@ function HomePage({ products }: HomePageProps) {
           </button>
         </div>
 
-        {/* Right Product Grid */}
         <div className="col-span-1 lg:col-span-3">
           <h2 className="text-sm font-bold text-gray-700 mb-4">
             {filteredProducts.length} listings · student items near campus
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
             {filteredProducts.map((product, idx) => (
-              <ProductCard key={product.id} product={product} index={idx} />
+              <ProductCard key={product.listing_id} product={product} index={idx} />
             ))}
           </div>
           {filteredProducts.length === 0 && (
@@ -120,19 +112,30 @@ function HomePage({ products }: HomePageProps) {
 }
 
 export default function App() {
-  const [currentUser] = useState({ name: 'Aibar K.', initials: 'AK', email: 'aibar@university.edu' });
+  const [currentUser] = useState({ id: 1, name: 'Aibar K.', initials: 'AK', email: 'aibar@university.edu' });
 
-  // State holding all products
-  const [products, setProducts] = useState<Product[]>(mockProducts);
+  const [products, setProducts] = useState<any[]>([]);
+  const [categories, setCategories] = useState<any[]>([]);
 
-  // Add a product (Used in CreateListing)
-  const handleAddProduct = (newProduct: Product) => {
+  // Fetch from PostgreSQL via FastAPI on load
+  useEffect(() => {
+    fetch('http://localhost:8000/api/listings')
+      .then(response => response.json())
+      .then(data => setProducts(data))
+      .catch(error => console.error("Error fetching listings:", error));
+
+    fetch('http://localhost:8000/api/categories')
+      .then(response => response.json())
+      .then(data => setCategories(data))
+      .catch(error => console.error("Error fetching categories:", error));
+  }, []);
+
+  const handleAddProduct = (newProduct: any) => {
     setProducts([newProduct, ...products]);
   };
 
-  // 2. Delete a product (Used in MyListings)
-  const handleDeleteProduct = (id: number) => {
-    setProducts(products.filter(product => product.id !== id));
+  const handleDeleteProduct = (listing_id: number) => {
+    setProducts(products.filter(product => product.listing_id !== listing_id));
   };
 
   return (
@@ -141,19 +144,15 @@ export default function App() {
       
       <main className="max-w-6xl mx-auto px-6 pb-16">
         <Routes>
-          <Route path="/" element={<HomePage products={products} />} />
-          <Route path="/product/:id" element={<ProductDetails />} />
+          {/* Pass categories down to the HomePage */}
+          <Route path="/" element={<HomePage products={products} categories={categories} />} />
+          <Route path="/product/:id" element={<ProductDetails products={products} />} />
           <Route path="/sell" element={<CreateListing addProduct={handleAddProduct} />} />
-          
           <Route 
             path="/my-listings" 
             element={<MyListings products={products} currentUser={currentUser} onDelete={handleDeleteProduct} />} 
           />
-          
-          <Route 
-            path="/profile" 
-            element={<StudentProfile user={currentUser} />} 
-          />
+          <Route path="/profile" element={<StudentProfile user={currentUser} />} />
           <Route path="/login" element={<AuthPage />} />
         </Routes>
       </main>

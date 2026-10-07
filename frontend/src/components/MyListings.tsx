@@ -1,17 +1,16 @@
+import React from 'react';
 import { Link } from 'react-router-dom';
-import { Product } from '../data/mockData';
 
 type MyListingsProps = {
-  products: Product[];
-  currentUser: { name: string; initials: string; email: string };
-  onDelete: (id: number) => void;
+  products: any[];
+  currentUser: { id: number; name: string; initials: string; email: string };
+  onDelete: (listing_id: number) => void;
 };
 
 const pastelColors = ['bg-blue-100', 'bg-green-100', 'bg-orange-100', 'bg-purple-100'];
 
 export default function MyListings({ products, currentUser, onDelete }: MyListingsProps) {
-  // Filter the global products array to only show items owned by the current user
-  const userProducts = products.filter(p => p.sellerName === currentUser.name);
+  const userProducts = products.filter(p => p.seller_id === currentUser.id);
 
   return (
     <div className="max-w-4xl mx-auto py-10">
@@ -31,43 +30,38 @@ export default function MyListings({ products, currentUser, onDelete }: MyListin
         ) : (
           <div className="flex flex-col">
             {userProducts.map((product) => {
-              const fallbackColor = pastelColors[product.id % pastelColors.length];
+              const fallbackColor = pastelColors[product.listing_id % pastelColors.length];
               
               return (
-                <div key={product.id} className="flex flex-col sm:flex-row sm:items-center gap-4 p-4 hover:bg-gray-50 border-b border-gray-100 last:border-0 transition-colors rounded-xl">
+                <div key={product.listing_id} className="flex flex-col sm:flex-row sm:items-center gap-4 p-4 hover:bg-gray-50 border-b border-gray-100 last:border-0 transition-colors rounded-xl">
                   
-                  {/* Image Placeholder (Clickable) */}
-                  <Link to={`/product/${product.id}`} className={`w-16 h-16 rounded-xl ${fallbackColor} flex-shrink-0 hidden sm:block`}></Link>
+                  <Link to={`/product/${product.listing_id}`} className={`w-16 h-16 rounded-xl ${fallbackColor} flex-shrink-0 hidden sm:block`}></Link>
                   
-                  {/* Product Info (Clickable) */}
                   <div className="flex flex-col flex-grow">
-                    <Link to={`/product/${product.id}`} className="font-bold text-gray-900 hover:underline text-base">
+                    <Link to={`/product/${product.listing_id}`} className="font-bold text-gray-900 hover:underline text-base">
                       {product.title}
                     </Link>
                     <span className="text-xs text-gray-500 font-medium mt-1">
-                      {product.category} · Updated today
+                      Category ID: {product.category_id} · Updated today
                     </span>
                   </div>
 
-                  {/* Price */}
                   <div className="font-bold text-gray-900 whitespace-nowrap sm:w-28 sm:text-right">
-                    {product.price.toLocaleString('ru-RU')} ₸
+                    {Number(product.price).toLocaleString('ru-RU')} ₸
                   </div>
 
-                  {/* Status Pill */}
                   <div className="w-20 flex sm:justify-center">
                     <span className="px-3 py-1 bg-blue-50 text-blue-600 text-xs font-bold rounded-full border border-blue-100">
-                      Active
+                      {product.status || 'Active'}
                     </span>
                   </div>
 
-                  {/* Action Buttons */}
                   <div className="flex gap-2 mt-3 sm:mt-0">
                     <button className="px-4 py-2 text-xs font-bold text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
                       Edit
                     </button>
                     <button 
-                      onClick={() => onDelete(product.id)} 
+                      onClick={() => onDelete(product.listing_id)} 
                       className="px-4 py-2 text-xs font-bold text-red-600 bg-white border border-gray-200 rounded-lg hover:bg-red-50 transition-colors"
                     >
                       Delete

@@ -1,15 +1,14 @@
 import React from 'react';
 
 interface HeroProps {
-  activeCategory: string;
-  setActiveCategory: React.Dispatch<React.SetStateAction<string>>;
+  activeCategory: number | "All";
+  setActiveCategory: React.Dispatch<React.SetStateAction<number | "All">>;
   searchQuery: string;
   setSearchQuery: React.Dispatch<React.SetStateAction<string>>;
+  categories: any[];
 }
 
-export default function Hero({ activeCategory, setActiveCategory, searchQuery, setSearchQuery }: HeroProps) {
-  const categories = ["All", "Books", "Electronics", "Furniture", "Clothes"];
-
+export default function Hero({ activeCategory, setActiveCategory, searchQuery, setSearchQuery, categories }: HeroProps) {
   return (
     <div className="flex flex-col gap-6 py-8">
       <div className="bg-white rounded-3xl p-10 flex flex-col gap-5 shadow-sm border border-gray-100">
@@ -29,17 +28,30 @@ export default function Hero({ activeCategory, setActiveCategory, searchQuery, s
       </div>
 
       <div className="flex gap-2 overflow-x-auto pb-2">
+        {/* Render the default 'All' button */}
+        <button 
+          onClick={() => setActiveCategory("All")}
+          className={`px-5 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
+            activeCategory === "All" 
+              ? "bg-blue-100 text-blue-700 border border-blue-200" 
+              : "bg-white text-gray-600 border border-gray-200 hover:bg-gray-50"
+          }`}
+        >
+          All
+        </button>
+
+        {/* Render database categories */}
         {categories.map((cat) => (
           <button 
-            key={cat}
-            onClick={() => setActiveCategory(cat)}
+            key={cat.category_id}
+            onClick={() => setActiveCategory(cat.category_id)}
             className={`px-5 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
-              activeCategory === cat 
+              activeCategory === cat.category_id 
                 ? "bg-blue-100 text-blue-700 border border-blue-200" 
                 : "bg-white text-gray-600 border border-gray-200 hover:bg-gray-50"
             }`}
           >
-            {cat}
+            {cat.name}
           </button>
         ))}
       </div>
