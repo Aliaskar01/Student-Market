@@ -4,13 +4,21 @@ from pathlib import Path
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 
+def normalize_database_url(url: str) -> str:
+    """Use the installed psycopg 3 driver for Render's Postgres URLs."""
+    for prefix in ("postgres://", "postgresql://"):
+        if url.startswith(prefix):
+            return "postgresql+psycopg://" + url[len(prefix):]
+    return url
+
+
 class Settings:
     """Application settings loaded from environment variables."""
 
-    DATABASE_URL: str = os.getenv(
+    DATABASE_URL: str = normalize_database_url(os.getenv(
         "DATABASE_URL",
         "postgresql+psycopg://postgres:postgres@db:5432/student_market",
-    )
+    ))
     SECRET_KEY: str = os.getenv(
         "SECRET_KEY", "student-marketplace-dev-secret-key-2026-change-in-prod"
     )
@@ -36,6 +44,7 @@ class Settings:
     # File upload settings for listing photos
     UPLOAD_DIR: Path = Path(os.getenv("UPLOAD_DIR", str(BASE_DIR / "uploads")))
     MAX_UPLOAD_SIZE_MB: int = int(os.getenv("MAX_UPLOAD_SIZE_MB", "5"))
+    FRONTEND_DIST: str = os.getenv("FRONTEND_DIST", "")
 
 
 settings = Settings()

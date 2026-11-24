@@ -30,6 +30,7 @@ from app.auth.validators import (
     validate_registration_email,
 )
 from app.config import settings
+from app.frontend import SPAStaticFiles
 from app.database import SessionLocal, engine, ensure_schema_updates, get_db
 from app.models import (
     Base,
@@ -82,6 +83,8 @@ async def lifespan(app: FastAPI):
             print("Database connected, schema verified, and default categories ready!")
             break
         except OperationalError:
+            if retries == 1:
+                raise
             print(f"Database not ready. Retrying... ({retries} left)")
             retries -= 1
             time.sleep(3)
@@ -203,7 +206,6 @@ def _delete_local_photo_file(image_reference: str) -> None:
 
 
 # --- HEALTH ---
-@app.get("/")
 @app.get("/api/health")
 def root():
     return {
@@ -211,6 +213,13 @@ def root():
         "auth_provider": settings.AUTH_PROVIDER,
         "message": "Student Marketplace API is running and database tables are ready.",
     }
+
+
+@app.get("/", include_in_schema=False)
+def homepage():
+    if settings.FRONTEND_DIST:
+        return FileResponse(Path(settings.FRONTEND_DIST) / "index.html")
+    return root()
 
 
 # --- AUTHENTICATION ENDPOINTS ---
@@ -977,3 +986,8 @@ def get_my_reports(current_student: CurrentStudent, db: DbSession):
         .where(ListingReport.reporter_id == current_student.student_id)
         .order_by(ListingReport.created_at.desc())
     ).all()
+
+
+# Keep this last so API endpoints take precedence over React client-side routes.
+if settings.FRONTEND_DIST:
+    app.mount("/", SPAStaticFiles(directory=settings.FRONTEND_DIST, html=True))

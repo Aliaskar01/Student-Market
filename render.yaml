@@ -1,0 +1,28 @@
+# Temporary demo: uploaded photos are ephemeral; free Postgres expires in 30 days.
+services:
+  - type: web
+    name: student-market
+    runtime: docker
+    plan: free
+    region: frankfurt
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /api/health
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: student-market-db
+          property: connectionString
+      - key: SECRET_KEY
+        generateValue: true
+      - key: AUTH_PROVIDER
+        value: local
+      - key: CORS_ORIGINS
+        value: ""
+
+databases:
+  - name: student-market-db
+    plan: free
+    region: frankfurt
+    databaseName: student_market
+    user: student_market
+    ipAllowList: []

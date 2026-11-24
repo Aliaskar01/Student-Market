@@ -36,6 +36,34 @@ A responsive web marketplace prototype built for university students to buy and 
 6. `favorite` — Saved listings per student (`(student_id, listing_id)` unique).
 7. `listing_report` — Moderation reports filed by authenticated students.
 
+## Temporary deployment on Render
+
+The root `render.yaml` creates a free Docker web service and a free PostgreSQL
+database in Frankfurt. The root `Dockerfile` builds React and serves it alongside
+FastAPI at the same origin. No `VITE_API_BASE_URL` is needed.
+
+1. Push these deployment files to GitHub.
+2. Open https://dashboard.render.com/select-repo?type=blueprint and connect this
+   repository, branch `main`.
+3. Review the Blueprint (both resources must use the Free plan) and deploy.
+4. Open the web service's public URL when deployment succeeds. Verify
+   `/api/health`, registration, login, creating a listing, and uploading a photo.
+
+Render generates `SECRET_KEY` and injects the database connection automatically.
+The application converts Render's PostgreSQL URL to use the installed psycopg 3
+driver. Its startup creates tables and seeds categories; it fails the deployment
+if the database remains unavailable. Existing local accounts/listings are not
+automatically migrated.
+
+**Demo limitations:** free services sleep after 15 minutes of inactivity; uploaded
+photos are lost on restart/redeploy/sleep; free Render PostgreSQL expires after
+30 days. See https://render.com/docs/free. For durable operation, use a paid
+database and either external object storage or a paid web service with a
+persistent disk mounted at `/var/data` and `UPLOAD_DIR=/var/data/uploads`.
+
+The API entry point is `app.main:app` from the `backend` directory. Do not use
+`main:app`: `backend/main.py` is an old placeholder without marketplace endpoints.
+
 ## Running with Docker Compose
 
 ```bash
