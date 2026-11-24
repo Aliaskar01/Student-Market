@@ -4,3 +4,6 @@ sqlalchemy
 psycopg[binary]
 pydantic
 alembic
+PyJWT[crypto]
+bcrypt
+python-multipart
